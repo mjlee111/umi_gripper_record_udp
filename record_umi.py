@@ -103,6 +103,7 @@ def main(args):
         print('waiting usb camera streaming...')
         time.sleep(1.0)
         images = usb_cam.get_frames(usb_camera_names)
+    print("USB Camera Stream check done.")
     
     # check image streaming
     images = udp_cam.get_frames(udp_camera_names)
@@ -110,6 +111,7 @@ def main(args):
         print('waiting udp camera streaming...')
         time.sleep(1.0)
         images = udp_cam.get_frames(udp_camera_names)
+    print("UDP Camera Stream check done.")
 
     # check tracker streaming
     tracker_poses = viveUTracker.get_tracker_poses(tracker_names)
@@ -117,10 +119,11 @@ def main(args):
         print('waiting tracker streaming...')
         time.sleep(1.0)
         tracker_poses = viveUTracker.get_tracker_poses(tracker_names)
+    print("Tracker Data Stream check done.")
     
     print('Are you ready for DATA COLLECTION?')
-    for cnt in range(3):
-        print(3 - cnt, 'seconds before to start DATA COLLECTION!!!')
+    for cnt in range(10):
+        print(10 - cnt, 'seconds before to start DATA COLLECTION!!!')
         time.sleep(1.0)
         
     print('DATA COLLECTION Start!')
@@ -265,6 +268,12 @@ def main(args):
 def signal_handler(sig, frame):
     """Handle Ctrl+C and propagate to child processes."""
     print("[INFO] Ctrl+C detected. Exiting...")
+    print("Stopping Tracker thread")
+    viveUTracker.thread_stop()
+    print("Stopping USB Cam thread")
+    usb_cam.stop()
+    print("Stopping UDP Cam thread")
+    udp_cam.stop()
     os._exit(0)  # Forcefully terminate all processes
     
 def get_user_input():
