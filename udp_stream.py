@@ -9,7 +9,7 @@ from threading import Thread
 
 class UDPCamera:
     def __init__(self, camera_dict, ip_dict, width=1280, height=480, fps=30, visualize=True):
-        self.camera_names = list(camera_dict.keys())  # preserve order
+        self.camera_names = camera_dict  # preserve order
         self.camera_dict = camera_dict
         self.ip_dict = ip_dict
         self.width = width
@@ -124,6 +124,7 @@ class UDPStream:
         self.port = port
         self.mode = mode
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.settimeout(1.0)  
         
         if mode == "recv":
             print(f"[{id}] UDP receiver node initialized")
@@ -144,7 +145,10 @@ class UDPStream:
         print(f"[{self.id}] Stopping UDP receiver thread")
         if self.recv_thread:
             self.running = False
-            self.recv_thread.join()
+            self.recv_thread.join(timeout=2)  
+            if self.recv_thread.is_alive():
+                print(f"[{self.id}] Force closing socket")
+            self.sock.close()
             self.recv_thread = None
             
     def start_send_thread(self):
@@ -174,9 +178,16 @@ class UDPStream:
 
     def recv_frame(self):
         while self.running:
-            data, _ = self.sock.recvfrom(65536)
-            np_arr = np.frombuffer(data, dtype=np.uint8)
-            self.frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            try:
+                data, _ = self.sock.recvfrom(65536)
+                np_arr = np.frombuffer(data, dtype=np.uint8)
+                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                self.frame = cv2.resize(frame, (1280, 480))
+            except socket.timeout:
+                continue
+            except Exception as e:
+                print(f"[{self.id}] Error receiving frame: {e}")
+                break
 
     def open_camera(self, camera_id=0, width=1280, height=480, fps=15):
         print(f"[{self.id}] Trying to open camera {camera_id}")
@@ -196,6 +207,7 @@ class UDPStream:
         if not ret:
             print(f"[{self.id}] Failed to read frame.")
             return None
+        frame = cv2.resize(frame, (1280, 480))
         return frame
 
     def close_camera(self):

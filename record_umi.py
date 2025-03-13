@@ -20,10 +20,10 @@ def main(args):
     dataset_dir = task_config['dataset_dir']
     max_timesteps = task_config['episode_len']
     usb_camera_names = task_config['usb_camera_names']
-    udp_camera_names = task_config['udp_camera_dict'].keys()
+    udp_camera_names = task_config['udp_camera_names']
     tracker_names = task_config['tracker_names']
     
-    global stop_record_flag, stop_user_input_thread_flag, viveUTracker, usb_cam
+    global stop_record_flag, stop_user_input_thread_flag, viveUTracker, usb_cam, udp_cam
     stop_record_flag = False
     stop_user_input_thread_flag = False
     
@@ -41,17 +41,16 @@ def main(args):
     
     print(f'USB Camera_dict: {camera_dict}')
 
-    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=False)
+    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=True)
     usb_cam.start()
     print(f'USB Camera Processes Start!')
 
     ### UDP CAMERA PROCESS ###
-    udp_camera_dict = task_config['udp_camera_dict']
-    print(f'UDP Camera_dict: {udp_camera_dict}')
+    print(f'UDP Camera_dict: {udp_camera_names}')
     ip_dict = task_config['ip_dict']
     print(f'UDP IP_dict: {ip_dict}')
 
-    udp_cam = UDPCamera(udp_camera_dict, ip_dict, width=1280, height=480, fps=30, visualize=False)
+    udp_cam = UDPCamera(udp_camera_names, ip_dict, width=1280, height=480, fps=30, visualize=True)
     udp_cam.start()
     print(f'UDP Camera Processes Start!')    
     
@@ -252,7 +251,7 @@ def signal_handler(sig, frame):
     os._exit(0)  # Forcefully terminate all processes
     
 def get_user_input():
-    global stop_record_flag, stop_user_input_thread_flag, viveUTracker, usb_cam
+    global stop_record_flag, stop_user_input_thread_flag, viveUTracker, usb_cam, udp_cam
     print("Press 'q' to stop data recording.")
     while not stop_user_input_thread_flag:
         user_input = input()
@@ -260,6 +259,7 @@ def get_user_input():
             stop_record_flag = True
             viveUTracker.thread_stop()
             usb_cam.stop()
+            udp_cam.stop()
             break
 
 def get_auto_index(dataset_dir, dataset_name_prefix = '', data_suffix = 'hdf5'):

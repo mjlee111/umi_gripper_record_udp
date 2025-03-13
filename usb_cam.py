@@ -117,7 +117,7 @@ class UsbCam:
                 for name, frame in frames.items():
                     if frame is not None:
                         if name == 'head_camera':
-                            print(f"head cam dt: {time.time() - time_show}")
+                            #print(f"head cam dt: {time.time() - time_show}")
                             time_show = time.time()
                             
                         cv2.imshow(name, frame)
