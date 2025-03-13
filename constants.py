@@ -9,12 +9,12 @@ DATA_DIR = CURRENT_DIR + '/data'
 TASK_CONFIGS = {
     'UMI_test':{
         'dataset_dir': DATA_DIR + '/UMI_test',
-        'episode_len': 1000,
+        'episode_len': 10,
         'train_ratio': 0.99,
         'usb_camera_names': ['head_camera'],
         'udp_camera_names': ['lhand_camera'],
         'ip_dict': {
-            'lhand_camera': ('0.0.0.0', 5000), 
+            'lhand_camera': ('0.0.0.0', 11001), 
         },
         'tracker_names': ['left_wrist', 'chest'],
         'name_filter': lambda n: 'sort_only' in n,

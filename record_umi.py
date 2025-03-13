@@ -41,7 +41,7 @@ def main(args):
     
     print(f'USB Camera_dict: {camera_dict}')
 
-    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=True)
+    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=False)
     usb_cam.start()
     print(f'USB Camera Processes Start!')
 
@@ -50,7 +50,7 @@ def main(args):
     ip_dict = task_config['ip_dict']
     print(f'UDP IP_dict: {ip_dict}')
 
-    udp_cam = UDPCamera(udp_camera_names, ip_dict, width=1280, height=480, fps=30, visualize=True)
+    udp_cam = UDPCamera(udp_camera_names, ip_dict, width=1280, height=480, fps=30, visualize=False)
     udp_cam.start()
     print(f'UDP Camera Processes Start!')    
     
