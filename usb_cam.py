@@ -36,76 +36,88 @@ class UsbCam:
         """Worker process for a single camera."""
         print(f"[INFO] Initializing camera worker for {name}...")
         dt = 1 / fps
+        cap = None
         
-        while not stop_event.is_set():
-            # Attempt to connect to the camera            
-            cap = cv2.VideoCapture(cam_id, cv2.CAP_DSHOW)
-            
-            if not cap.isOpened():
-                print(f"[ERROR] Camera {name} failed to open.")
-                cap.release()
-                time.sleep(1)
-                continue
-            print(f"[INFO] Camera {name} started.")
-            
-            cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-            cap.set(cv2.CAP_PROP_FPS, fps)
-            cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-
-            # bright_setting_done = cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.0)   # [-64~64] 범위
-            # contrast_setting_done = cap.set(cv2.CAP_PROP_CONTRAST, 32.0)     # [0~64] 범위
-            # saturation_setting_done = cap.set(cv2.CAP_PROP_SATURATION, 78.99999)   # [0, 79) 범위
-            # sharpness_setting_done = cap.set(cv2.CAP_PROP_SHARPNESS, 7.99999) # [0, 7.99)
-            
-            # print(f'{self.camera_name} bright_setting_done : {bright_setting_done}')
-            # print(f'{self.camera_name} contrast_setting_done : {contrast_setting_done}')
-            # print(f'{self.camera_name} saturation_setting_done : {saturation_setting_done}')
-            # print(f'{self.camera_name} sharpness_setting_done : {sharpness_setting_done}')
-    
+        try:
             while not stop_event.is_set():
-                t_start = time.time()
-                ret, frame = cap.read()
+                # Attempt to connect to the camera            
+                if cap is None:
+                    cap = cv2.VideoCapture(cam_id, cv2.CAP_DSHOW)
                 
-                while not stop_event.is_set() and frame is None:
-                    # If the camera fails, retry connection
-                    if not ret:
-                        print(f"[ERROR] Camera {name} failed to capture frame.")
-                        break
-                    
+                if not cap.isOpened():
+                    print(f"[ERROR] Camera {name} failed to open.")
+                    if cap is not None:
+                        cap.release()
+                        cap = None
+                    time.sleep(1)
+                    continue
+                print(f"[INFO] Camera {name} started.")
+                
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+                cap.set(cv2.CAP_PROP_FPS, fps)
+                cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+
+                # bright_setting_done = cap.set(cv2.CAP_PROP_BRIGHTNESS, 0.0)   # [-64~64] 범위
+                # contrast_setting_done = cap.set(cv2.CAP_PROP_CONTRAST, 32.0)     # [0~64] 범위
+                # saturation_setting_done = cap.set(cv2.CAP_PROP_SATURATION, 78.99999)   # [0, 79) 범위
+                # sharpness_setting_done = cap.set(cv2.CAP_PROP_SHARPNESS, 7.99999) # [0, 7.99)
+                
+                # print(f'{self.camera_name} bright_setting_done : {bright_setting_done}')
+                # print(f'{self.camera_name} contrast_setting_done : {contrast_setting_done}')
+                # print(f'{self.camera_name} saturation_setting_done : {saturation_setting_done}')
+                # print(f'{self.camera_name} sharpness_setting_done : {sharpness_setting_done}')
+        
+                while not stop_event.is_set():
+                    t_start = time.time()
                     ret, frame = cap.read()
-                    print(f'[DEBUG] frame: {frame}')
-                
-                # Send frame to queue (non-blocking)
-                
-                try:
-                    # Remove the oldest frame if the queue is full
-                    if frame_queue.full():
-                        discarded_frame = frame_queue.get()  # Remove the oldest frame
-                        # print(f"[INFO] Discarded oldest frame for {name}")
-
-                    # Add the new frame to the queue
-                    frame_queue.put_nowait(frame)
-                except Exception as e:
-                    print(f"[ERROR] Failed to add frame to queue for {name}: {e}")
-                # try:
-                #     frame_queue.put_nowait(frame)
-                # except:
-                #     print(f"[WARNING] Frame queue for {name} is full. Dropping frame.")
-
-                
-                
-                t_end = time.time()
-                t_sleep = max(dt - (t_end - t_start), 0)
-                # print(f'[DEBUG] camera {cam_id} t_sleep: {t_sleep}')
-                if t_sleep == 0:
-                    print(f'[WARNING] camera loop is delaying. Elapsed time for a loop: {t_end - t_start}')
                     
-                time.sleep(t_sleep)
+                    while not stop_event.is_set() and frame is None:
+                        # If the camera fails, retry connection
+                        if not ret:
+                            print(f"[ERROR] Camera {name} failed to capture frame.")
+                            break
+                        
+                        ret, frame = cap.read()
+                        print(f'[DEBUG] frame: {frame}')
+                    
+                    # Send frame to queue (non-blocking)
+                    
+                    try:
+                        # Remove the oldest frame if the queue is full
+                        if frame_queue.full():
+                            discarded_frame = frame_queue.get()  # Remove the oldest frame
+                            # print(f"[INFO] Discarded oldest frame for {name}")
 
-            cap.release()
-            print(f"[INFO] Camera {name} connection lost. Retrying...")
-    
+                        # Add the new frame to the queue
+                        frame_queue.put_nowait(frame)
+                    except Exception as e:
+                        print(f"[ERROR] Failed to add frame to queue for {name}: {e}")
+                    # try:
+                    #     frame_queue.put_nowait(frame)
+                    # except:
+                    #     print(f"[WARNING] Frame queue for {name} is full. Dropping frame.")
+
+                    
+                    
+                    t_end = time.time()
+                    t_sleep = max(dt - (t_end - t_start), 0)
+                    # print(f'[DEBUG] camera {cam_id} t_sleep: {t_sleep}')
+                    if t_sleep == 0:
+                        print(f'[WARNING] camera loop is delaying. Elapsed time for a loop: {t_end - t_start}')
+                        
+                    time.sleep(t_sleep)
+
+                if cap is not None:
+                    cap.release()
+                    cap = None
+                print(f"[INFO] Camera {name} connection lost. Retrying...")
+                
+        finally:
+            if cap is not None:
+                cap.release()
+                print(f"[INFO] Camera {name} released successfully.")
+
     def visualize(self):
         """Display camera frames in real-time."""
         print(f"Press 'q' to quit visualization.")
@@ -146,12 +158,18 @@ class UsbCam:
         """Stop all camera processes."""
         print("[INFO] Stopping all cameras...")
         self.stop_event.set()  # Signal all processes to stop
+        
+        # Give some time for processes to cleanup
+        time.sleep(0.5)
+        
         for process in self.processes:
             process.terminate()
-            process.join()
-
+            process.join(timeout=1.0)  # Add timeout to prevent hanging
+            if process.is_alive():
+                process.kill()  # Force kill if process is still alive
+                
         if self.visualize_flag and self.visualize_thread:
-            self.visualize_thread.join()
+            self.visualize_thread.join(timeout=1.0)
             cv2.destroyAllWindows()
             
         print("[INFO] All camera processes stopped.")
