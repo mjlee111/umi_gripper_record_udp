@@ -184,8 +184,11 @@ def main(args):
     print(f'Total Data Record Time [s]: {time.perf_counter() - time_begin}')
     print(f'Avg Record Frequency [Hz]: {data_tick / (time.perf_counter() - time_begin)}')    
     
+    print("Stopping Tracker thread")
     viveUTracker.thread_stop()
+    print("Stopping USB Cam thread")
     usb_cam.stop()
+    print("Stopping UDP Cam thread")
     udp_cam.stop()
     # stop_user_input_thread_flag = True    
     
@@ -271,8 +274,11 @@ def get_user_input():
         user_input = input()
         if user_input.lower() == 'q':
             stop_record_flag = True
+            print("Stopping Tracker thread")
             viveUTracker.thread_stop()
+            print("Stopping USB Cam thread")
             usb_cam.stop()
+            print("Stopping UDP Cam thread")
             udp_cam.stop()
             break
 
@@ -291,4 +297,5 @@ if __name__ == '__main__':
     parser.add_argument('--task_name', action='store', type=str, help='Task name.', default='UMI_test', required=False)
     parser.add_argument('--episode_idx', action='store', type=int, help='Episode index.', default=None, required=False)
     main(vars(parser.parse_args()))
+    
 
