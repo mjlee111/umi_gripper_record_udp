@@ -124,11 +124,18 @@ class UDPStream:
         self.port = port
         self.mode = mode
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.settimeout(1.0)  
+        self.sock.settimeout(1.0)
+        
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
         if mode == "recv":
             print(f"[{id}] UDP receiver node initialized")
-            self.sock.bind((host, port))
+            try:
+                self.sock.bind((host, port))
+            except OSError as e:
+                print(f"[{id}] Socket binding failed: {e}")
+                self.sock.close()
+                raise
             self.frame = None
             self.recv_thread = None
             self.running = False
@@ -145,12 +152,12 @@ class UDPStream:
         print(f"[{self.id}] Stopping UDP receiver thread")
         if self.recv_thread:
             self.running = False
-            self.recv_thread.join(timeout=2)  
+            self.recv_thread.join(timeout=2)
             if self.recv_thread.is_alive():
                 print(f"[{self.id}] Force closing socket")
             self.sock.close()
             self.recv_thread = None
-            
+
     def start_send_thread(self):
         print(f"[{self.id}] Starting UDP sender thread")
         self.running = True
@@ -213,28 +220,13 @@ class UDPStream:
     def close_camera(self):
         self.cap.release()
         print(f"[{self.id}] Camera closed")
+
+    def __del__(self):
+        """Destructor to clean up socket"""
+        if hasattr(self, 'sock'):
+            self.running = False
+            try:
+                self.sock.close()
+            except:
+                pass
             
-if __name__ == "__main__":
-    set_start_method("spawn", force=True)
-    
-    camera_dict = {
-        'lhand_camera': None, 
-        'rhand_camera': None,
-    }
-    
-    ip_dict = {
-        'lhand_camera': ('0.0.0.0', 5000), 
-        'rhand_camera': ('0.0.0.0', 5001),
-    }
-    
-    udp_camera_names = list(camera_dict.keys())
-    
-    udp_cam = UDPCamera(camera_dict, ip_dict, width=1280, height=480, fps=30, visualize=True)
-    udp_cam.start()
-    
-    try:
-        while True:
-            if input().lower() == 'q':
-                break
-    finally:
-        udp_cam.stop()
