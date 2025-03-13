@@ -151,9 +151,23 @@ def main(args):
         for cam_name, image in images.items():
             while not stop_record_flag and image is None:
                 time.sleep(0.001)
-                image = usb_cam.get_frames([cam_name])[cam_name]
+                if cam_name in usb_camera_names:
+                    frames = usb_cam.get_frames([cam_name])
+                else:
+                    frames = udp_cam.get_frames([cam_name])
                 
-            data_dict[f'/observations/images/{cam_name}'].append(image)
+                if cam_name in frames:
+                    image = frames[cam_name]
+                else:
+                    print(f"[WARNING] Camera '{cam_name}' not found. Skipping...")
+                    break
+                
+            if image is not None:
+                data_dict[f'/observations/images/{cam_name}'].append(image)
+            else:
+                print(f"[ERROR] Could not get frame from camera '{cam_name}'")
+                stop_record_flag = True
+                break
     
         data_tick += 1
         
