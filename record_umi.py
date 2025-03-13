@@ -22,6 +22,7 @@ def main(args):
     usb_camera_names = task_config['usb_camera_names']
     udp_camera_names = task_config['udp_camera_names']
     tracker_names = task_config['tracker_names']
+    visualize = task_config['visualize']
     
     global stop_record_flag, stop_user_input_thread_flag, viveUTracker, usb_cam, udp_cam
     stop_record_flag = False
@@ -41,7 +42,7 @@ def main(args):
     
     print(f'USB Camera_dict: {camera_dict}')
 
-    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=False)
+    usb_cam = UsbCam(camera_dict, width=1280, height=480, fps=30, visualize=visualize)
     usb_cam.start()
     print(f'USB Camera Processes Start!')
 
@@ -50,7 +51,7 @@ def main(args):
     ip_dict = task_config['ip_dict']
     print(f'UDP IP_dict: {ip_dict}')
 
-    udp_cam = UDPCamera(udp_camera_names, ip_dict, width=1280, height=480, fps=30, visualize=False)
+    udp_cam = UDPCamera(udp_camera_names, ip_dict, width=1280, height=480, fps=30, visualize=visualize)
     udp_cam.start()
     print(f'UDP Camera Processes Start!')    
     
